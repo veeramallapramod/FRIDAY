@@ -3,16 +3,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 
-// ── API Keys (fallback if .env not loading) ──────────────────────────────────
-if (!process.env.GROQ_API_KEY) {
-  process.env.GROQ_API_KEY = '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';
-}
-if (!process.env.NVIDIA_API_KEY) {
-  process.env.NVIDIA_API_KEY = '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';
-}
-if (!process.env.GOOGLE_API_KEY) {
-  process.env.GOOGLE_API_KEY = 'AIzaSyAb-NQgfwVLcxykE_HrNnvowDEbrhQVcZU';
-}
+// ── API Keys loaded from .env file — see .env.example for setup ──────────────
 
 const store = new Store();
 let mainWindow;
