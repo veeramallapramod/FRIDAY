@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FRIDAY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan: #00f5ff;
+      --cyan-dim: #00a8b0;
+      --cyan-glow: rgba(0, 245, 255, 0.15);
+      --red: #ff3c3c;
+      --gold: #ffd700;
+      --bg: #040d14;
+      --panel: rgba(0, 20, 35, 0.85);
+      --border: rgba(0, 245, 255, 0.25);
+      --text: #c8f0f5;
+      --text-dim: rgba(200, 240, 245, 0.5);
+      --font-hud: 'Orbitron', monospace;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+      -webkit-app-region: no-drag;
+    }
+
+    #app {
+      width: 100%; height: 100vh;
+      background: radial-gradient(ellipse at 30% 20%, rgba(0, 60, 80, 0.5) 0%, var(--bg) 60%);
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-mono);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Scan line overlay */
+    #app::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 245, 255, 0.015) 2px,
+        rgba(0, 245, 255, 0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* ── Titlebar ── */
+    #titlebar {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 15, 25, 0.9);
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .friday-logo {
+      width: 22px; height: 22px;
+      border: 2px solid var(--cyan);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 12px var(--cyan), inset 0 0 6px rgba(0, 245, 255, 0.2);
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+
+    .friday-logo::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 8px var(--cyan), inset 0 0 4px rgba(0, 245, 255, 0.2); }
+      50% { box-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(0, 245, 255, 0.2), inset 0 0 10px rgba(0, 245, 255, 0.3); }
+    }
+
+    .title-text {
+      font-family: var(--font-hud);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      color: var(--cyan);
+      text-shadow: 0 0 15px var(--cyan);
+    }
+
+    .title-sub {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-top: 1px;
+    }
+
+    .win-controls {
+      display: flex; gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .win-btn {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .win-btn:hover { opacity: 0.8; transform: scale(1.2); }
+    .win-btn.close { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    .win-btn.min { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+
+    /* ── Status Bar ── */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .status-item { display: flex; align-items: center; gap: 5px; }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    .status-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Visualizer ── */
+    #visualizer {
+      height: 70px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 20px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .viz-bar {
+      width: 4px;
+      border-radius: 2px 2px 0 0;
+      background: linear-gradient(to top, var(--cyan), rgba(0, 245, 255, 0.3));
+      transition: height 0.1s ease;
+      min-height: 4px;
+      box-shadow: 0 0 4px rgba(0, 245, 255, 0.4);
+    }
+
+    /* ── FRIDAY Circle ── */
+    #friday-circle-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    #friday-circle {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      border: 2px solid var(--cyan);
+      position: relative;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.2), inset 0 0 30px rgba(0, 245, 255, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    #friday-circle:hover {
+      box-shadow: 0 0 40px rgba(0, 245, 255, 0.4), inset 0 0 30px rgba(0, 245, 255, 0.1);
+    }
+
+    #friday-circle.listening {
+      border-color: var(--red);
+      box-shadow: 0 0 30px rgba(255, 60, 60, 0.5), inset 0 0 20px rgba(255, 60, 60, 0.1);
+      animation: listening-pulse 1s ease-in-out infinite;
+    }
+
+    #friday-circle.thinking {
+      border-color: var(--gold);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+      animation: spin-ring 1s linear infinite;
+    }
+
+    @keyframes listening-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes spin-ring {
+      0% { border-top-color: var(--gold); border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; }
+      25% { border-top-color: transparent; border-right-color: var(--gold); border-bottom-color: transparent; border-left-color: transparent; }
+      50% { border-top-color: transparent; border-right-color: transparent; border-bottom-color: var(--gold); border-left-color: transparent; }
+      75% { border-top-color: transparent; border-right-color: transparent; border-bottom-color: transparent; border-left-color: var(--gold); }
+      100% { border-top-color: var(--gold); border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent; }
+    }
+
+    .circle-inner {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 245, 255, 0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-hud);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      text-shadow: 0 0 15px var(--cyan);
+    }
+
+    #circle-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--text-dim);
+    }
+
+    /* ── Chat Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg {
+      max-width: 90%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      animation: msg-in 0.3s ease;
+    }
+
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: rgba(0, 245, 255, 0.08);
+      border: 1px solid rgba(0, 245, 255, 0.2);
+      color: var(--text);
+    }
+
+    .msg.friday {
+      align-self: flex-start;
+      background: rgba(0, 15, 25, 0.8);
+      border: 1px solid var(--border);
+      color: var(--cyan);
+      text-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+    }
+
+    .msg-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      color: var(--text-dim);
+    }
+
+    .msg.friday .msg-label { color: var(--cyan-dim); }
+
+    .msg.system {
+      align-self: center;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    /* ── Typing indicator ── */
+    .typing-dots {
+      display: flex; gap: 4px; align-items: center;
+      padding: 4px 0;
+    }
+
+    .typing-dots span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: dot-bounce 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dot-bounce {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* ── Input Area ── */
+    #input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      background: rgba(0, 10, 20, 0.6);
+    }
+
+    #text-input {
+      flex: 1;
+      background: rgba(0, 245, 255, 0.04);
+      border: 1px solid rgba(0, 245, 255, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #text-input:focus {
+      border-color: rgba(0, 245, 255, 0.5);
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+    }
+
+    #text-input::placeholder { color: var(--text-dim); }
+
+    #send-btn {
+      width: 36px; height: 36px;
+      background: rgba(0, 245, 255, 0.1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--cyan);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    #send-btn:hover {
+      background: rgba(0, 245, 255, 0.2);
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+    }
+
+    /* ── Corner decorations ── */
+    .corner {
+      position: absolute;
+      width: 20px; height: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .corner::before, .corner::after {
+      content: '';
+      position: absolute;
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+    }
+    .corner::before { width: 2px; height: 12px; }
+    .corner::after { width: 12px; height: 2px; }
+    .corner.tl { top: 0; left: 0; }
+    .corner.tl::before { top: 0; left: 0; }
+    .corner.tl::after { top: 0; left: 0; }
+    .corner.tr { top: 0; right: 0; }
+    .corner.tr::before { top: 0; right: 0; }
+    .corner.tr::after { top: 0; right: 0; }
+    .corner.bl { bottom: 0; left: 0; }
+    .corner.bl::before { bottom: 0; left: 0; }
+    .corner.bl::after { bottom: 0; left: 0; }
+    .corner.br { bottom: 0; right: 0; }
+    .corner.br::before { bottom: 0; right: 0; }
+    .corner.br::after { bottom: 0; right: 0; }
+
+    /* ── Wake word indicator ── */
+    #wake-indicator {
+      position: absolute;
+      top: 55px;
+      right: 12px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      display: flex; align-items: center; gap: 4px;
+      z-index: 50;
+    }
+
+    /* ── Scrollbar hidden for status ── */
+    #api-key-warning {
+      margin: 8px 16px;
+      padding: 10px;
+      background: rgba(255, 60, 60, 0.1);
+      border: 1px solid rgba(255, 60, 60, 0.3);
+      border-radius: 6px;
+      font-size: 10px;
+      color: #ff8080;
+      letter-spacing: 1px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    /* ── Provider Toggle ── */
+    #provider-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 8, 16, 0.7);
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    #provider-bar::-webkit-scrollbar { display: none; }
+
+    .provider-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .provider-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .provider-btn:hover {
+      border-color: var(--cyan);
+      color: var(--text);
+    }
+
+    .provider-btn.active {
+      border-color: var(--active-color, var(--cyan));
+      color: var(--active-color, var(--cyan));
+      background: rgba(0, 245, 255, 0.06);
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+      text-shadow: 0 0 8px var(--active-color, var(--cyan));
+    }
+
+    .provider-btn .pbadge { font-size: 11px; }
+    .provider-btn .pname { font-weight: bold; letter-spacing: 1px; }
+    .provider-btn .psub { font-size: 8px; opacity: 0.6; }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Corner decorations -->
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <!-- Titlebar -->
+    <div id="titlebar">
+      <div class="title-left">
+        <div class="friday-logo"></div>
+        <div>
+          <div class="title-text">FRIDAY</div>
+          <div class="title-sub">DIGITAL ASSISTANT v1.0</div>
+        </div>
+      </div>
+      <div class="win-controls">
+        <button class="win-btn min" id="btn-min" title="Minimize"></button>
+        <button class="win-btn close" id="btn-close" title="Close"></button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="status-bar">
+      <div class="status-item">
+        <div class="status-dot" id="ai-dot"></div>
+        <span id="ai-status">AI ONLINE</span>
+      </div>
+      <div class="status-item">
+        <div class="status-dot" id="mic-dot"></div>
+        <span id="mic-status">MIC STANDBY</span>
+      </div>
+      <div class="status-item" id="time-display">--:--</div>
+    </div>
+
+
+    <!-- Provider Toggle Bar -->
+    <div id="provider-bar">
+      <span class="provider-label">AI:</span>
+      <button class="provider-btn" data-provider="groq" style="--active-color:#f97316">
+        <span class="pbadge">⚡</span>
+        <span class="pname">GROQ</span>
+        <span class="psub">Fast</span>
+      </button>
+      <button class="provider-btn" data-provider="nvidia" style="--active-color:#76b900">
+        <span class="pbadge">🚀</span>
+        <span class="pname">NVIDIA</span>
+        <span class="psub">Power</span>
+      </button>
+      <button class="provider-btn" data-provider="gemini" style="--active-color:#4285f4">
+        <span class="pbadge">🔵</span>
+        <span class="pname">GEMINI</span>
+        <span class="psub">Backup</span>
+      </button>
+      <button class="provider-btn" data-provider="auto" style="--active-color:#00f5ff">
+        <span class="pbadge">🤖</span>
+        <span class="pname">AUTO</span>
+        <span class="psub">Smart</span>
+      </button>
+    </div>
+
+    <!-- API Key Warning -->
+    <div id="api-key-warning">
+      ⚠ ANTHROPIC_API_KEY not set.<br>
+      Set it in your system environment variables and restart FRIDAY.
+    </div>
+
+    <!-- Voice Visualizer -->
+    <div id="visualizer">
+      <!-- bars generated by JS -->
+    </div>
+
+    <!-- FRIDAY Circle Button -->
+    <div id="friday-circle-container">
+      <div id="friday-circle" title="Click or say 'Hey FRIDAY'">
+        <div class="circle-inner" id="circle-text">F.R.I.D.A.Y</div>
+      </div>
+      <div id="circle-label">SAY "HEY FRIDAY" OR CLICK</div>
+    </div>
+
+    <!-- Wake word indicator -->
+    <div id="wake-indicator">
+      <div class="status-dot" id="wake-dot"></div>
+      <span id="wake-status">LISTENING FOR WAKE WORD</span>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages">
+      <div class="msg system">[ FRIDAY SYSTEMS INITIALIZED ]</div>
+    </div>
+
+    <!-- Input -->
+    <div id="input-area">
+      <input type="text" id="text-input" placeholder="Type a command or ask anything..." />
+      <button id="send-btn">▶</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
